@@ -15,21 +15,21 @@ public class CalculadorDeClasses implements Calculavel {
 
     @Override
     public BigDecimal somar(Object obj) {
-        return sumWithAnnotation(obj, Somar.class);
+        return sumValueFromBigDecimal(obj, Somar.class);
     }
 
-    private <T extends Annotation> BigDecimal sumWithAnnotation(Object obj, Class<T> annotation) {
+    private <T extends Annotation> BigDecimal sumValueFromBigDecimal(Object obj, Class<T> annotation) {
         BigDecimal total = BigDecimal.ZERO;
         return Stream.of(obj.getClass().getDeclaredFields())
                 .filter(field -> field.getType().isAssignableFrom(BigDecimal.class)
                         && field.isAnnotationPresent(annotation))
-                .map(field -> getValue(obj, field))
+                .map(field -> mapToBigDecimal(obj, field))
                 .reduce(total, BigDecimal::add);
     }
 
     @Override
     public BigDecimal subtrair(Object obj) {
-        return sumWithAnnotation(obj, Subtrair.class);
+        return sumValueFromBigDecimal(obj, Subtrair.class);
     }
 
     @Override
@@ -37,15 +37,19 @@ public class CalculadorDeClasses implements Calculavel {
         return somar(obj).subtract(subtrair(obj));
     }
 
-    private BigDecimal getValue(Object obj, Field field) {
+    private BigDecimal mapToBigDecimal(Object obj, Field field) {
         try {
-            String methodName = GETTER + field.getName().substring(0, 1).toUpperCase()
-                    + field.getName().substring(1);
+            String methodName = getMethodName(field);
             return (BigDecimal) obj.getClass()
                     .getMethod(methodName)
                     .invoke(obj);
         } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException ite) {
             throw new RuntimeException(ite);
         }
+    }
+
+    private String getMethodName(Field field) {
+        return GETTER + field.getName().substring(0, 1).toUpperCase()
+                + field.getName().substring(1);
     }
 }
